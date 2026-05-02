@@ -1,0 +1,2 @@
+ALTER TABLE seats
+ADD COLUMN price integer NOT NULL DEFAULT 0;

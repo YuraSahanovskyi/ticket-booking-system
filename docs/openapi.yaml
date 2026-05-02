@@ -1,0 +1,163 @@
+openapi: 3.0.3
+info:
+  title: Ticket Booking System API
+  description: API for managing event seat reservations with automated background cleanup.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Local server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email, example: "user@example.com" }
+        password: { type: string, minLength: 6, example: "password123" }
+
+    BookingInput:
+      type: object
+      required: [seat_id]
+      properties:
+        seat_id: { type: string, format: uuid, example: "550e8400-e29b-41d4-a716-446655440000" }
+
+    PaymentWebhookInput:
+      type: object
+      required: [order_id, status]
+      properties:
+        order_id: { type: string, format: uuid }
+        status: { type: string, example: "success" }
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthInput' }
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+        '400': { description: Invalid input body }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate user
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthInput' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+        '401': { description: Invalid credentials }
+
+  /events:
+    get:
+      tags: [Events]
+      summary: Get all events
+      responses:
+        '200':
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object }
+
+  /events/{id}/seats:
+    get:
+      tags: [Events]
+      summary: Get event details and seat map
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  event: { type: object }
+                  seats: { type: array, items: { type: object } }
+
+  /bookings:
+    post:
+      tags: [Bookings]
+      summary: Create a booking
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BookingInput' }
+      responses:
+        '201': { description: Booking created }
+        '401': { description: Unauthorized }
+    get:
+      tags: [Bookings]
+      summary: Get current user bookings
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of user bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: object }
+
+  /bookings/{id}:
+    delete:
+      tags: [Bookings]
+      summary: Cancel a booking
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Cancelled successfully }
+        '400': { description: Invalid ID }
+
+  /payments/webhook:
+    post:
+      tags: [Payments]
+      summary: Handle payment confirmation
+      description: Public endpoint for payment provider callbacks
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentWebhookInput' }
+      responses:
+        '200': { description: Status processed }
+        '400': { description: Invalid payment payload }
