@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TicketFlow - Engineering-Focused Booking</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        body {
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased text-gray-900 min-h-screen flex flex-col" x-data="ticketApp()">
+
+    <!-- Header -->
+    <header class="bg-gray-900 text-white shadow-lg sticky top-0 z-40">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold tracking-tight cursor-pointer flex items-center gap-2"
+                @click="navigate('events')">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-indigo-400" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                </svg>
+                TicketFlow
+            </div>
+            <nav class="flex gap-4 items-center">
+                <button @click="navigate('events')" class="hover:text-indigo-400 transition font-medium"
+                    :class="view === 'events' ? 'text-indigo-400' : ''">Events</button>
+                <template x-if="isAuthenticated">
+                    <button @click="navigate('bookings')" class="hover:text-indigo-400 transition font-medium"
+                        :class="view === 'bookings' ? 'text-indigo-400' : ''">My Bookings</button>
+                </template>
+                <template x-if="!isAuthenticated">
+                    <div class="flex gap-3 items-center ml-2 border-l border-gray-700 pl-4">
+                        <button @click="navigate('login')"
+                            class="hover:text-white text-gray-300 transition font-medium">Log In</button>
+                        <button @click="navigate('register')"
+                            class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg font-medium transition text-white shadow-sm">Register</button>
+                    </div>
+                </template>
+                <template x-if="isAuthenticated">
+                    <div class="flex gap-3 items-center ml-2 border-l border-gray-700 pl-4">
+                        <button @click="logout()"
+                            class="bg-gray-800 border border-gray-700 hover:bg-gray-700 px-4 py-2 rounded-lg font-medium transition text-gray-300 hover:text-white">Log
+                            Out</button>
+                    </div>
+                </template>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Notifications -->
+    <div class="fixed top-20 right-4 z-50 flex flex-col gap-2 w-full max-w-sm" x-cloak>
+        <template x-if="notification">
+            <div x-transition.duration.300ms
+                class="px-6 py-4 rounded-xl shadow-2xl text-white flex items-start gap-3 border border-white/10 backdrop-blur-sm"
+                :class="{
+                     'bg-red-600/95': notification.type === 'error',
+                     'bg-green-600/95': notification.type === 'success',
+                     'bg-amber-500/95 text-gray-900': notification.type === 'warning'
+                 }">
+                <div class="mt-0.5">
+                    <template x-if="notification.type === 'error'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </template>
+                    <template x-if="notification.type === 'success'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </template>
+                    <template x-if="notification.type === 'warning'">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </template>
+                </div>
+                <div class="flex-1 font-medium" x-text="notification.message"></div>
+                <button @click="notification = null" class="opacity-70 hover:opacity-100 transition"><svg
+                        xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg></button>
+            </div>
+        </template>
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-1 container mx-auto px-4 py-8">
+
+        <!-- Events View -->
+        <div x-show="view === 'events'" x-cloak class="space-y-6">
+            <div class="flex justify-between items-end">
+                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Active Events</h1>
+                <div class="text-sm text-gray-500 font-medium bg-white px-3 py-1 rounded-full border border-gray-200"
+                    x-text="`${events.length} events found`"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="event in events" :key="event.id || Math.random()">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
+                        @click="fetchEventDetails(event.id)">
+                        <div class="h-40 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative">
+                            <div
+                                class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-gray-900/50 to-transparent">
+                            </div>
+                            <div class="absolute bottom-4 left-4 text-white font-semibold flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span
+                                    x-text="event.date ? new Date(event.date).toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'}) : 'Date TBD'"></span>
+                            </div>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h2 class="text-xl font-bold text-gray-900 mb-2 leading-tight"
+                                x-text="event.title || 'Untitled Event'"></h2>
+                            <p class="text-gray-500 text-sm mb-6 flex-1 line-clamp-3"
+                                x-text="event.description || 'Join us for this amazing event. Book your seats now before they sell out!'">
+                            </p>
+                            <div class="flex justify-between items-center mt-auto pt-4 border-t border-gray-100">
+                                <span
+                                    class="text-indigo-600 font-semibold text-sm hover:text-indigo-800 transition">View
+                                    Seat Map &rarr;</span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="!events || events.length === 0">
+                    <div
+                        class="col-span-full py-16 flex flex-col items-center justify-center text-center bg-white rounded-2xl border border-gray-200 border-dashed">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-300 mb-4" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900">No events currently available</h3>
+                        <p class="text-gray-500 mt-1">Please check back later for upcoming shows.</p>
+                        <button @click="fetchEvents()"
+                            class="mt-4 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition">Refresh
+                            List</button>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Event Details (Seat Map) -->
+        <div x-show="view === 'event'" x-cloak class="space-y-6 max-w-5xl mx-auto">
+            <button @click="navigate('events')"
+                class="text-gray-500 hover:text-indigo-600 font-medium flex items-center gap-1 transition bg-white/50 px-3 py-1.5 rounded-lg w-fit backdrop-blur-sm border border-gray-200 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Events
+            </button>
+
+            <template x-if="currentEvent">
+                <div class="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+                    <div class="mb-8 border-b border-gray-100 pb-6">
+                        <h1 class="text-3xl font-bold text-gray-900 mb-2"
+                            x-text="currentEvent.title || 'Event Details'"></h1>
+                        <div class="flex items-center gap-4 text-sm text-gray-500 font-medium">
+                            <span class="flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-500" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span
+                                    x-text="currentEvent.date ? new Date(currentEvent.date).toLocaleDateString(undefined, {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) : 'Date TBD'"></span>
+                            </span>
+                        </div>
+                        <p class="text-gray-600 mt-4 max-w-3xl leading-relaxed"
+                            x-text="currentEvent.description || 'Select your seats from the interactive map below. Red signifies reserved or paid seats, and gray signifies available seats.'">
+                        </p>
+                    </div>
+
+                    <div
+                        class="mb-6 flex flex-wrap gap-6 justify-center text-sm font-medium bg-gray-50 p-4 rounded-xl border border-gray-200">
+                        <div class="flex items-center gap-2">
+                            <div class="w-5 h-5 rounded bg-white border-2 border-gray-300 shadow-sm"></div> <span
+                                class="text-gray-700">Available</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-5 h-5 rounded bg-amber-400 border-2 border-amber-500 shadow-sm"></div> <span
+                                class="text-gray-700">Reserved (Payment Pending)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-5 h-5 rounded bg-indigo-600 border-2 border-indigo-700 shadow-sm"></div> <span
+                                class="text-gray-700">Paid / Unavailable</span>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-gray-100 p-8 md:p-12 rounded-2xl border border-gray-200 overflow-x-auto relative shadow-inner">
+                        <!-- Stage Indicator -->
+                        <div class="w-full max-w-md mx-auto relative mb-16">
+                            <div
+                                class="h-12 bg-gradient-to-b from-gray-300 to-gray-200 rounded-t-[100px] border-t-4 border-gray-400 shadow-sm flex justify-center items-end pb-2">
+                                <span class="text-xs font-bold text-gray-500 tracking-[0.3em] uppercase">Stage</span>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Seat Grid -->
+                        <div class="grid gap-3 justify-center max-w-4xl mx-auto"
+                            style="grid-template-columns: repeat(auto-fit, minmax(2.5rem, 1fr));">
+                            <template x-for="seat in currentSeats" :key="seat.id">
+                                <button
+                                    type="button"
+                                    class="w-10 h-10 md:w-12 md:h-12 rounded-t-xl rounded-b-md font-bold text-xs flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-sm text-white border border-transparent cursor-pointer"
+                                    :class="!seat.booking ? 'bg-green-500 hover:bg-green-600 hover:-translate-y-1' : 'bg-red-500 cursor-not-allowed opacity-80'"
+                                    :disabled="!!seat.booking" 
+                                    @click.prevent.stop="bookSeat(seat.id || seat.ID || seat.seat_id)"
+                                    :title="`Row ${seat.row || '1'} - Seat ${seat.number || '?'}`">
+                                    <span class="pointer-events-none" x-text="seat.number || '?'"></span>
+                                </button>
+                            </template>
+                        </div>
+
+                        <template x-if="!currentSeats || currentSeats.length === 0">
+                            <div class="text-center py-8 text-gray-500 font-medium">
+                                Seat map is currently unavailable.
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Bookings View -->
+        <div x-show="view === 'bookings'" x-cloak class="space-y-6 max-w-5xl mx-auto">
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">My Bookings</h1>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[600px]">
+                        <thead>
+                            <tr
+                                class="bg-gray-50 text-gray-500 border-b border-gray-200 text-sm uppercase tracking-wider">
+                                <th class="p-5 font-semibold">Event Details</th>
+                                <th class="p-5 font-semibold">Seat</th>
+                                <th class="p-5 font-semibold">Status</th>
+                                <th class="p-5 font-semibold">Time Remaining</th>
+                                <th class="p-5 font-semibold text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <template x-for="booking in bookings" :key="booking.id">
+                                <tr class="hover:bg-gray-50/80 transition group">
+                                    <td class="p-5">
+                                        <div class="font-semibold text-gray-900"
+                                            x-text="booking.event?.title || 'Unknown Event'"></div>
+                                        <div class="text-xs text-gray-500 mt-1"
+                                            x-text="booking.event?.date ? new Date(booking.event.date).toLocaleDateString() : ''">
+                                        </div>
+                                    </td>
+                                    <td class="p-5">
+                                        <div
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-gray-100 border border-gray-200 text-sm font-medium text-gray-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400"
+                                                viewBox="0 0 20 20" fill="currentColor">
+                                                <path
+                                                    d="M4 10V3a1 1 0 011-1h10a1 1 0 011 1v7m-12 0v7a1 1 0 001 1h2a1 1 0 001-1v-2h4v2a1 1 0 001 1h2a1 1 0 001-1v-7m-12 0h12" />
+                                            </svg>
+                                            <span
+                                                x-text="`Row ${booking.seat?.row || '?'} - Seat ${booking.seat?.number || '?'}`"></span>
+                                        </div>
+                                    </td>
+                                    <td class="p-5">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"
+                                            :class="{
+                                                  'bg-amber-100 text-amber-800 border border-amber-200': booking.status === 'reserved',
+                                                  'bg-emerald-100 text-emerald-800 border border-emerald-200': booking.status === 'paid'
+                                              }">
+                                            <span class="w-1.5 h-1.5 rounded-full"
+                                                :class="booking.status === 'reserved' ? 'bg-amber-500' : 'bg-emerald-500'"></span>
+                                            <span x-text="booking.status"></span>
+                                        </span>
+                                    </td>
+                                    <td class="p-5">
+                                        <template x-if="booking.status === 'reserved' && timers[booking.id]">
+                                            <div class="font-mono text-sm font-medium bg-gray-100 px-3 py-1.5 rounded-lg inline-block border border-gray-200"
+                                                :class="{'text-red-600 bg-red-50 border-red-200 animate-pulse': timers[booking.id].remaining < 60000, 'text-gray-700': timers[booking.id].remaining >= 60000}">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                    class="h-4 w-4 inline mr-1 -mt-0.5" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span x-text="formatTime(timers[booking.id].remaining)"></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="booking.status === 'paid'">
+                                            <span class="text-gray-400 text-sm font-medium">Secured</span>
+                                        </template>
+                                    </td>
+                                    <td class="p-5 text-right">
+                                        <template x-if="booking.status === 'reserved'">
+                                            <button @click="cancelBooking(booking.id)"
+                                                class="text-red-600 hover:text-white hover:bg-red-600 border border-red-200 px-3 py-1.5 rounded-lg font-medium text-sm transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1">
+                                                Cancel
+                                            </button>
+                                        </template>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template x-if="!bookings || bookings.length === 0">
+                                <tr>
+                                    <td colspan="5" class="p-12 text-center">
+                                        <div class="flex flex-col items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-300 mb-3"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                            </svg>
+                                            <p class="text-gray-500 text-lg font-medium mb-4">No bookings found</p>
+                                            <button @click="navigate('events')"
+                                                class="text-indigo-600 font-medium hover:text-indigo-800 transition bg-indigo-50 px-4 py-2 rounded-lg">Browse
+                                                Events</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auth Views (Login & Register) -->
+        <div x-show="view === 'login' || view === 'register'" x-cloak
+            class="flex items-center justify-center min-h-[60vh]">
+            <div class="w-full max-w-md bg-white p-8 sm:p-10 rounded-3xl shadow-xl border border-gray-100">
+                <div class="text-center mb-8">
+                    <div
+                        class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 mb-4 shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight"
+                        x-text="view === 'login' ? 'Welcome Back' : 'Create Account'"></h1>
+                    <p class="text-gray-500 mt-2 text-sm"
+                        x-text="view === 'login' ? 'Please enter your details to sign in.' : 'Register to start booking your tickets.'">
+                    </p>
+                </div>
+
+                <form @submit.prevent="view === 'login' ? login() : register()" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+                        <div class="relative">
+                            <div
+                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                                </svg>
+                            </div>
+                            <input type="email" x-model="authForm.email" required placeholder="you@example.com"
+                                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition shadow-sm text-gray-900">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+                        <div class="relative">
+                            <div
+                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                    fill="currentColor">
+                                    <path fill-rule="evenodd"
+                                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <input type="password" x-model="authForm.password" required minlength="6"
+                                placeholder="••••••••"
+                                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition shadow-sm text-gray-900">
+                        </div>
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-indigo-200 mt-2 flex justify-center items-center gap-2">
+                        <span x-text="view === 'login' ? 'Sign In' : 'Sign Up'"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="mt-8 text-center text-sm text-gray-600 border-t border-gray-100 pt-6">
+                    <template x-if="view === 'login'">
+                        <p>Don't have an account? <a href="#" @click.prevent="navigate('register')"
+                                class="text-indigo-600 font-bold hover:text-indigo-800 transition">Register here</a></p>
+                    </template>
+                    <template x-if="view === 'register'">
+                        <p>Already have an account? <a href="#" @click.prevent="navigate('login')"
+                                class="text-indigo-600 font-bold hover:text-indigo-800 transition">Sign in</a></p>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12 py-8">
+        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>&copy; 2026 TicketFlow System. Engineering Diploma Project.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('ticketApp', () => ({
+                view: 'events',
+                token: localStorage.getItem('token') || null,
+                apiBase: '/api',
+                events: [],
+                currentEvent: null,
+                currentSeats: [],
+                bookings: [],
+                authForm: { email: '', password: '' },
+                notification: null,
+                notificationTimeout: null,
+                timers: {},
+
+                init() {
+                    this.fetchEvents();
+                    if (this.token) {
+                        this.fetchBookings();
+                    }
+                },
+
+                get isAuthenticated() {
+                    return !!this.token;
+                },
+
+                showNotification(message, type = 'error') {
+                    this.notification = { message, type };
+                    if (this.notificationTimeout) clearTimeout(this.notificationTimeout);
+                    this.notificationTimeout = setTimeout(() => {
+                        this.notification = null;
+                    }, 4000);
+                },
+
+                async apiCall(endpoint, method = 'GET', body = null) {
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    if (this.token) {
+                        headers['Authorization'] = `Bearer ${this.token}`;
+                    }
+
+                    const options = { method, headers };
+                    if (body) {
+                        options.body = JSON.stringify(body);
+                    }
+
+                    try {
+                        const response = await fetch(`${this.apiBase}${endpoint}`, options);
+
+                        if (response.status === 401) {
+                            if (this.isAuthenticated) {
+                                this.logout(false);
+                                this.showNotification('Session expired or unauthorized. Please log in.', 'warning');
+                            }
+                            return null;
+                        }
+
+                        if (response.status === 409) {
+                            this.showNotification('Conflict: Seat is already booked or unavailable.', 'warning');
+                            return null;
+                        }
+
+                        if (response.status >= 500) {
+                            this.showNotification('Server error. Please try again later.', 'error');
+                            return null;
+                        }
+
+                        if (response.status === 204) {
+                            return true;
+                        }
+
+                        let data = null;
+                        const contentType = response.headers.get("content-type");
+                        if (contentType && contentType.includes("application/json")) {
+                            data = await response.json();
+                        }
+
+                        if (!response.ok) {
+                            this.showNotification(data?.message || `Request failed with status ${response.status}`, 'error');
+                            return null;
+                        }
+
+                        return data || true;
+                    } catch (err) {
+                        console.error("API Call Error:", err);
+                        this.showNotification('Network error. Please check your connection.', 'error');
+                        return null;
+                    }
+                },
+
+                async login() {
+                    const data = await this.apiCall('/auth/login', 'POST', this.authForm);
+                    if (data && data.token) {
+                        this.token = data.token;
+                        localStorage.setItem('token', data.token);
+                        this.authForm = { email: '', password: '' };
+                        this.showNotification('Logged in successfully', 'success');
+                        this.navigate('events');
+                    }
+                },
+
+                async register() {
+                    const data = await this.apiCall('/auth/register', 'POST', this.authForm);
+                    if (data && data.id) {
+                        this.showNotification('Registration successful. Please log in.', 'success');
+                        this.navigate('login');
+                    }
+                },
+
+                logout(showNotify = true) {
+                    this.token = null;
+                    localStorage.removeItem('token');
+                    this.bookings = [];
+                    for (let id in this.timers) clearInterval(this.timers[id].interval);
+                    this.timers = {};
+
+                    if (this.view === 'bookings') {
+                        this.navigate('events');
+                    }
+                    if (showNotify) {
+                        this.showNotification('Logged out successfully', 'success');
+                    }
+                },
+
+                navigate(newView) {
+                    this.view = newView;
+                    window.scrollTo(0, 0);
+                    if (newView === 'events') {
+                        this.fetchEvents();
+                    } else if (newView === 'bookings') {
+                        this.fetchBookings();
+                    }
+                },
+
+                async fetchEvents() {
+                    const data = await this.apiCall('/events');
+                    if (data && Array.isArray(data)) {
+                        this.events = data;
+                    } else if (data === null) {
+                        // Error handled
+                    } else {
+                        this.events = [];
+                    }
+                },
+
+                async fetchEventDetails(id) {
+                    const data = await this.apiCall(`/events/${id}/seats`);
+                    if (data && data.event && data.seats) {
+                        this.currentEvent = data.event;
+                        this.currentSeats = data.seats;
+                        this.navigate('event');
+                    }
+                },
+
+                async bookSeat(seatId) {
+                    console.log("bookSeat triggered for seat:", seatId);
+                    if (!seatId) {
+                        alert("Error: Seat ID is missing.");
+                        return;
+                    }
+
+                    if (!this.token) {
+                        alert("Please login to book tickets");
+                        return;
+                    }
+
+                    try {
+                        const url = `${this.apiBase}/bookings/`;
+                        console.log("Sending POST to", url, "with seat_id:", seatId);
+                        
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${this.token}`
+                            },
+                            body: JSON.stringify({ seat_id: seatId })
+                        });
+
+                        console.log("Response status:", response.status);
+
+                        if (response.ok || response.status === 201) {
+                            alert("Seat reserved successfully!");
+                            const eventId = this.selectedEvent?.id || this.currentEvent?.id;
+                            if (eventId) {
+                                this.fetchEventDetails(eventId);
+                            }
+                        } else {
+                            const errorText = await response.text();
+                            alert(`Error: ${errorText}`);
+                        }
+                    } catch (error) {
+                        console.error("Fetch error:", error);
+                        alert(`Network error: ${error.message}`);
+                    }
+                },
+
+                async fetchBookings() {
+                    if (!this.isAuthenticated) return;
+
+                    const data = await this.apiCall('/bookings');
+                    if (data && Array.isArray(data)) {
+                        this.bookings = data;
+                        this.setupTimers();
+                    }
+                },
+
+                async cancelBooking(id) {
+                    if (confirm('Are you sure you want to cancel this booking?')) {
+                        const success = await this.apiCall(`/bookings/${id}`, 'DELETE');
+                        if (success) {
+                            this.showNotification('Booking cancelled successfully', 'success');
+                            await this.fetchBookings();
+                        }
+                    }
+                },
+
+                setupTimers() {
+                    for (let id in this.timers) {
+                        if (this.timers[id].interval) {
+                            clearInterval(this.timers[id].interval);
+                        }
+                    }
+
+                    const newTimers = {};
+
+                    this.bookings.forEach(booking => {
+                        if (booking.status === 'reserved' && booking.expires_at) {
+                            const expiresAt = new Date(booking.expires_at).getTime();
+                            newTimers[booking.id] = {
+                                remaining: this.getRemainingTime(expiresAt),
+                                interval: null
+                            };
+
+                            newTimers[booking.id].interval = setInterval(() => {
+                                const remaining = this.getRemainingTime(expiresAt);
+                                if (remaining <= 0) {
+                                    clearInterval(newTimers[booking.id].interval);
+                                    this.fetchBookings();
+                                } else {
+                                    this.timers[booking.id].remaining = remaining;
+                                }
+                            }, 1000);
+                        }
+                    });
+
+                    this.timers = newTimers;
+                },
+
+                getRemainingTime(expiresAtMs) {
+                    const now = new Date().getTime();
+                    const distance = expiresAtMs - now;
+                    return distance > 0 ? distance : 0;
+                },
+
+                formatTime(ms) {
+                    if (ms <= 0) return '0m 0s';
+                    const minutes = Math.floor(ms / (1000 * 60));
+                    const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+                    return `${minutes}m ${seconds}s`;
+                }
+            }));
+        });
+    </script>
+</body>
+
+</html>
