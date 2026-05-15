@@ -65,20 +65,22 @@ func (r *BookingRepository) GetByID(ctx context.Context, id uuid.UUID, userID uu
 	}, nil
 }
 
-func (r *BookingRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]domain.Booking, error) {
+func (r *BookingRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]domain.BookingWithDetails, error) {
 	rows, err := r.q.GetBookingsByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	bookings := make([]domain.Booking, len(rows))
+	bookings := make([]domain.BookingWithDetails, len(rows))
 	for i, b := range rows {
-		bookings[i] = domain.Booking{
-			ID:        b.ID,
-			UserID:    b.UserID,
-			SeatID:    b.SeatID,
-			Status:    string(b.Status),
-			ExpiresAt: b.ExpiresAt,
+		bookings[i] = domain.BookingWithDetails{
+			ID:             b.BookingID,
+			Status:         string(b.Status),
+			ExpiresAt:      b.ExpiresAt,
+			EventTitle:     b.EventTitle,
+			EventStartTime: b.EventStartTime,
+			SeatRow:        int(b.SeatRow),
+			SeatNumber:     int(b.SeatNumber),
 		}
 	}
 	return bookings, nil
@@ -96,5 +98,5 @@ func (r *BookingRepository) Cancel(ctx context.Context, id uuid.UUID, userID uui
 }
 
 func (r *BookingRepository) CancelExpiredBookings(ctx context.Context) (int64, error) {
-    return r.q.CancelExpiredBookings(ctx)
+	return r.q.CancelExpiredBookings(ctx)
 }

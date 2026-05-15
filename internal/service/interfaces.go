@@ -20,7 +20,7 @@ type EventService interface {
 
 type BookingService interface {
 	BookSeat(ctx context.Context, userID, seatID uuid.UUID) (*domain.Booking, error)
-	GetUserBookings(ctx context.Context, userID uuid.UUID) ([]domain.Booking, error)
+	GetUserBookings(ctx context.Context, userID uuid.UUID) ([]domain.BookingWithDetails, error)
 	ConfirmPayment(ctx context.Context, orderID uuid.UUID) error
 	CancelBooking(ctx context.Context, userID, bookingID uuid.UUID) error
 	CleanupExpiredBookings(ctx context.Context) (int64, error)

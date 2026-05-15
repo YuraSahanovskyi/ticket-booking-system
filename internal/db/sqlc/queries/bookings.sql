@@ -8,9 +8,19 @@ SELECT * FROM bookings
 WHERE id = $1 AND user_id = $2 LIMIT 1;
 
 -- name: GetBookingsByUserID :many
-SELECT * FROM bookings
-WHERE user_id = $1
-ORDER BY created_at DESC;
+SELECT 
+    b.id AS booking_id, 
+    b.status, 
+    b.expires_at,
+    e.title AS event_title, 
+    e.start_time AS event_start_time,
+    s.row AS seat_row, 
+    s.number AS seat_number
+FROM bookings b
+JOIN seats s ON b.seat_id = s.id
+JOIN events e ON s.event_id = e.id
+WHERE b.user_id = $1
+ORDER BY e.start_time DESC;
 
 -- name: SetBookingStatusPaid :exec
 UPDATE bookings

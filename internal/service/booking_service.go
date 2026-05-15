@@ -41,7 +41,7 @@ func (s *bookingService) BookSeat(ctx context.Context, userID, seatID uuid.UUID)
 	return createdBooking, nil
 }
 
-func (s *bookingService) GetUserBookings(ctx context.Context, userID uuid.UUID) ([]domain.Booking, error) {
+func (s *bookingService) GetUserBookings(ctx context.Context, userID uuid.UUID) ([]domain.BookingWithDetails, error) {
 	return s.bookingRepo.GetByUserID(ctx, userID)
 }
 

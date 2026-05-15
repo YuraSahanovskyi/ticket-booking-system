@@ -24,11 +24,3 @@ type Seat struct {
 	Price   int       `json:"price"`
 	Booking *Booking  `json:"booking,omitempty"` // omitempty, якщо місця ще не заброньовані
 }
-
-type Booking struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    uuid.UUID `json:"user_id"`
-	SeatID    uuid.UUID `json:"seat_id"`
-	Status    string    `json:"status"`
-	ExpiresAt time.Time `json:"expires_at"`
-}

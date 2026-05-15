@@ -22,7 +22,7 @@ type EventRepository interface {
 type BookingRepository interface {
 	Create(ctx context.Context, b *domain.Booking) (*domain.Booking, error)
 	GetByID(ctx context.Context, id uuid.UUID, userID uuid.UUID) (*domain.Booking, error)
-	GetByUserID(ctx context.Context, userID uuid.UUID) ([]domain.Booking, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID) ([]domain.BookingWithDetails, error)
 	UpdateStatusToPaid(ctx context.Context, id uuid.UUID) error
 	Cancel(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
 	CancelExpiredBookings(ctx context.Context) (int64, error)

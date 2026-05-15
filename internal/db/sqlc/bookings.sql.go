@@ -94,27 +94,48 @@ func (q *Queries) GetBookingByID(ctx context.Context, arg GetBookingByIDParams) 
 }
 
 const getBookingsByUserID = `-- name: GetBookingsByUserID :many
-SELECT id, user_id, seat_id, status, created_at, expires_at FROM bookings
-WHERE user_id = $1
-ORDER BY created_at DESC
+SELECT 
+    b.id AS booking_id, 
+    b.status, 
+    b.expires_at,
+    e.title AS event_title, 
+    e.start_time AS event_start_time,
+    s.row AS seat_row, 
+    s.number AS seat_number
+FROM bookings b
+JOIN seats s ON b.seat_id = s.id
+JOIN events e ON s.event_id = e.id
+WHERE b.user_id = $1
+ORDER BY e.start_time DESC
 `
 
-func (q *Queries) GetBookingsByUserID(ctx context.Context, userID uuid.UUID) ([]Booking, error) {
+type GetBookingsByUserIDRow struct {
+	BookingID      uuid.UUID
+	Status         BookingStatus
+	ExpiresAt      time.Time
+	EventTitle     string
+	EventStartTime time.Time
+	SeatRow        int32
+	SeatNumber     int32
+}
+
+func (q *Queries) GetBookingsByUserID(ctx context.Context, userID uuid.UUID) ([]GetBookingsByUserIDRow, error) {
 	rows, err := q.db.Query(ctx, getBookingsByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Booking
+	var items []GetBookingsByUserIDRow
 	for rows.Next() {
-		var i Booking
+		var i GetBookingsByUserIDRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.UserID,
-			&i.SeatID,
+			&i.BookingID,
 			&i.Status,
-			&i.CreatedAt,
 			&i.ExpiresAt,
+			&i.EventTitle,
+			&i.EventStartTime,
+			&i.SeatRow,
+			&i.SeatNumber,
 		); err != nil {
 			return nil, err
 		}

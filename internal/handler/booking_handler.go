@@ -3,13 +3,10 @@ package handler
 import (
 	"net/http"
 
+	"github.com/YuraSahanovskyi/booking-system/internal/handler/dto"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
-
-type bookingInput struct {
-	SeatID uuid.UUID `json:"seat_id" binding:"required"`
-}
 
 func (h *Handler) initBookingRoutes(api *gin.RouterGroup) {
 	bookings := api.Group("/bookings", h.userIdentity)
@@ -23,45 +20,62 @@ func (h *Handler) initBookingRoutes(api *gin.RouterGroup) {
 func (h *Handler) createBooking(c *gin.Context) {
 	userID, ok := getUserID(c)
 	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		c.JSON(http.StatusUnauthorized, dto.NewErrorResponse("unauthorized"))
 		return
 	}
 
-	var input bookingInput
+	var input dto.CreateBookingRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input"})
+		c.JSON(http.StatusBadRequest, dto.NewValidationErrorResponse(err))
 		return
 	}
 
-	booking, err := h.bookingService.BookSeat(c.Request.Context(), userID, input.SeatID)
+	seatID, err := uuid.Parse(input.SeatID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, dto.NewErrorResponse("invalid seat id"))
 		return
 	}
 
-	c.JSON(http.StatusCreated, booking)
+	booking, err := h.bookingService.BookSeat(c.Request.Context(), userID, seatID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.NewErrorResponse(err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusCreated, dto.ToCreateBookingResponse(*booking))
 }
 
 func (h *Handler) getUserBookings(c *gin.Context) {
-	userID, _ := getUserID(c)
-	bookings, err := h.bookingService.GetUserBookings(c.Request.Context(), userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	userID, ok := getUserID(c)
+	if !ok{
+		c.JSON(http.StatusUnauthorized, dto.NewErrorResponse("unauthorized"))
 		return
 	}
-	c.JSON(http.StatusOK, bookings)
+
+	bookings, err := h.bookingService.GetUserBookings(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("failed to fetch bookings"))
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.ToBookingsResponse(bookings))
 }
 
 func (h *Handler) cancelBooking(c *gin.Context) {
-	userID, _ := getUserID(c)
+	userID, ok := getUserID(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, dto.NewErrorResponse("unauthorized"))
+		return
+	}
+	
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, dto.NewErrorResponse("invalid id"))
 		return
 	}
 
 	if err := h.bookingService.CancelBooking(c.Request.Context(), userID, id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, dto.NewErrorResponse(err.Error()))
 		return
 	}
 
