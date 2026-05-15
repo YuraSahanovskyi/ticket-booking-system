@@ -17,6 +17,18 @@ func (h *Handler) initBookingRoutes(api *gin.RouterGroup) {
 	}
 }
 
+// @Summary      Create a booking
+// @Description  Reserve a seat for a specific event
+// @Tags         bookings
+// @Security     ApiKeyAuth
+// @Accept       json
+// @Produce      json
+// @Param        input  body      dto.CreateBookingRequest  true  "Seat ID"
+// @Success      201    {object}  dto.CreateBookingResponse
+// @Failure      400    {object}  dto.ErrorResponse
+// @Failure      401    {object}  dto.ErrorResponse
+// @Failure      500    {object}  dto.ErrorResponse
+// @Router       /bookings [post]
 func (h *Handler) createBooking(c *gin.Context) {
 	userID, ok := getUserID(c)
 	if !ok {
@@ -45,6 +57,14 @@ func (h *Handler) createBooking(c *gin.Context) {
 	c.JSON(http.StatusCreated, dto.ToCreateBookingResponse(*booking))
 }
 
+// @Summary      Get my bookings
+// @Description  Get a list of all bookings for the current user
+// @Tags         bookings
+// @Security     ApiKeyAuth
+// @Produce      json
+// @Success      200  {array}   dto.BookingResponse
+// @Failure      401  {object}  dto.ErrorResponse
+// @Router       /bookings [get]
 func (h *Handler) getUserBookings(c *gin.Context) {
 	userID, ok := getUserID(c)
 	if !ok{
@@ -61,6 +81,15 @@ func (h *Handler) getUserBookings(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.ToBookingsResponse(bookings))
 }
 
+// @Summary      Cancel booking
+// @Description  Cancel an existing booking by its ID
+// @Tags         bookings
+// @Security     ApiKeyAuth
+// @Param        id   path      string  true  "Booking ID (UUID)"
+// @Success      204  "No Content"
+// @Failure      400  {object}  dto.ErrorResponse
+// @Failure      404  {object}  dto.ErrorResponse
+// @Router       /bookings/{id} [delete]
 func (h *Handler) cancelBooking(c *gin.Context) {
 	userID, ok := getUserID(c)
 	if !ok {

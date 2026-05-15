@@ -19,6 +19,21 @@ func NewHandler(auth service.AuthService, event service.EventService, booking se
 	}
 }
 
+// @title           Booking System API
+// @version         1.0
+// @description     API Server for Cinema/Event Booking System.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   Yura Sahanovskyi
+// @contact.url    https://github.com/YuraSahanovskyi
+
+// @host      localhost:8080
+// @BasePath  /api/v1
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer <your_jwt_token>" to authenticate
 func (h *Handler) Init() *gin.Engine {
 	router := gin.Default()
 

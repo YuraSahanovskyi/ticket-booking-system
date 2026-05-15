@@ -1,0 +1,363 @@
+basePath: /api/v1
+definitions:
+  github_com_YuraSahanovskyi_booking-system_internal_handler_dto.BookingResponse:
+    properties:
+      event_start_time:
+        example: "2026-05-20T18:00:00Z"
+        type: string
+      event_title:
+        example: Kyiv Tech Summit
+        type: string
+      expires_at:
+        example: "2026-05-02T18:00:00Z"
+        type: string
+      id:
+        example: a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d
+        type: string
+      seat_number:
+        example: 12
+        type: integer
+      seat_row:
+        example: 5
+        type: integer
+      status:
+        example: reserved
+        type: string
+    type: object
+  github_com_YuraSahanovskyi_booking-system_internal_handler_dto.CreateBookingRequest:
+    properties:
+      seat_id:
+        example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        type: string
+    required:
+    - seat_id
+    type: object
+  github_com_YuraSahanovskyi_booking-system_internal_handler_dto.CreateBookingResponse:
+    properties:
+      expires_at:
+        example: "2026-05-02T18:15:00Z"
+        type: string
+      id:
+        example: a1b2c3d4...
+        type: string
+      status:
+        example: reserved
+        type: string
+    type: object
+  github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse:
+    properties:
+      errors:
+        additionalProperties:
+          type: string
+        example:
+          email: ' invalid format'
+        type: object
+      message:
+        example: Invalid request body
+        type: string
+    type: object
+  github_com_YuraSahanovskyi_booking-system_internal_handler_dto.EventResponse:
+    properties:
+      description:
+        example: Description
+        type: string
+      end_time:
+        example: "2026-05-20T22:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      location:
+        example: Location
+        type: string
+      start_time:
+        example: "2026-05-20T18:00:00Z"
+        type: string
+      title:
+        example: Title
+        type: string
+    type: object
+  github_com_YuraSahanovskyi_booking-system_internal_handler_dto.EventWithSeatsResponse:
+    properties:
+      description:
+        example: Description
+        type: string
+      end_time:
+        example: "2026-05-20T22:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      location:
+        example: Location
+        type: string
+      seats:
+        items:
+          $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.SeatResponse'
+        type: array
+      start_time:
+        example: "2026-05-20T18:00:00Z"
+        type: string
+      title:
+        example: Title
+        type: string
+    type: object
+  github_com_YuraSahanovskyi_booking-system_internal_handler_dto.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: secret123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  github_com_YuraSahanovskyi_booking-system_internal_handler_dto.LoginResponse:
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR...
+        type: string
+    type: object
+  github_com_YuraSahanovskyi_booking-system_internal_handler_dto.RegisterRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: secret123
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  github_com_YuraSahanovskyi_booking-system_internal_handler_dto.RegisterResponse:
+    properties:
+      id:
+        example: f4e28058-5f0b-437f-965f-f4670c8e22a7
+        type: string
+    type: object
+  github_com_YuraSahanovskyi_booking-system_internal_handler_dto.SeatResponse:
+    properties:
+      id:
+        example: 9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d
+        type: string
+      is_available:
+        example: true
+        type: boolean
+      number:
+        example: 12
+        type: integer
+      price:
+        example: 500
+        type: integer
+      row:
+        example: 1
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    name: Yura Sahanovskyi
+    url: https://github.com/YuraSahanovskyi
+  description: API Server for Cinema/Event Booking System.
+  termsOfService: http://swagger.io/terms/
+  title: Booking System API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token
+      parameters:
+      - description: Login Credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.LoginResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+      summary: User Login
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with email and password
+      parameters:
+      - description: Registration Info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - auth
+  /bookings:
+    get:
+      description: Get a list of all bookings for the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.BookingResponse'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get my bookings
+      tags:
+      - bookings
+    post:
+      consumes:
+      - application/json
+      description: Reserve a seat for a specific event
+      parameters:
+      - description: Seat ID
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.CreateBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.CreateBookingResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a booking
+      tags:
+      - bookings
+  /bookings/{id}:
+    delete:
+      description: Cancel an existing booking by its ID
+      parameters:
+      - description: Booking ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Cancel booking
+      tags:
+      - bookings
+  /events:
+    get:
+      description: Get a list of all upcoming events
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.EventResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+      summary: Get all events
+      tags:
+      - events
+  /events/{id}/seats:
+    get:
+      description: Get detailed information about an event and its seats availability
+      parameters:
+      - description: Event ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.EventWithSeatsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse'
+      summary: Get event seats
+      tags:
+      - events
+securityDefinitions:
+  ApiKeyAuth:
+    description: Type "Bearer <your_jwt_token>" to authenticate
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

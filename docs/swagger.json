@@ -1,0 +1,540 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API Server for Cinema/Event Booking System.",
+        "title": "Booking System API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "Yura Sahanovskyi",
+            "url": "https://github.com/YuraSahanovskyi"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Authenticate user and return JWT token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User Login",
+                "parameters": [
+                    {
+                        "description": "Login Credentials",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.LoginResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Create a new user account with email and password",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register a new user",
+                "parameters": [
+                    {
+                        "description": "Registration Info",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.RegisterResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a list of all bookings for the current user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "Get my bookings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.BookingResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Reserve a seat for a specific event",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "Create a booking",
+                "parameters": [
+                    {
+                        "description": "Seat ID",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.CreateBookingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.CreateBookingResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/bookings/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Cancel an existing booking by its ID",
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "Cancel booking",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Booking ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/events": {
+            "get": {
+                "description": "Get a list of all upcoming events",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Get all events",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.EventResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/{id}/seats": {
+            "get": {
+                "description": "Get detailed information about an event and its seats availability",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Get event seats",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Event ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.EventWithSeatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_YuraSahanovskyi_booking-system_internal_handler_dto.BookingResponse": {
+            "type": "object",
+            "properties": {
+                "event_start_time": {
+                    "type": "string",
+                    "example": "2026-05-20T18:00:00Z"
+                },
+                "event_title": {
+                    "type": "string",
+                    "example": "Kyiv Tech Summit"
+                },
+                "expires_at": {
+                    "type": "string",
+                    "example": "2026-05-02T18:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d"
+                },
+                "seat_number": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "seat_row": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "status": {
+                    "type": "string",
+                    "example": "reserved"
+                }
+            }
+        },
+        "github_com_YuraSahanovskyi_booking-system_internal_handler_dto.CreateBookingRequest": {
+            "type": "object",
+            "required": [
+                "seat_id"
+            ],
+            "properties": {
+                "seat_id": {
+                    "type": "string",
+                    "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+                }
+            }
+        },
+        "github_com_YuraSahanovskyi_booking-system_internal_handler_dto.CreateBookingResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string",
+                    "example": "2026-05-02T18:15:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "a1b2c3d4..."
+                },
+                "status": {
+                    "type": "string",
+                    "example": "reserved"
+                }
+            }
+        },
+        "github_com_YuraSahanovskyi_booking-system_internal_handler_dto.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        "email": " invalid format"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid request body"
+                }
+            }
+        },
+        "github_com_YuraSahanovskyi_booking-system_internal_handler_dto.EventResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
+                "end_time": {
+                    "type": "string",
+                    "example": "2026-05-20T22:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "location": {
+                    "type": "string",
+                    "example": "Location"
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2026-05-20T18:00:00Z"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Title"
+                }
+            }
+        },
+        "github_com_YuraSahanovskyi_booking-system_internal_handler_dto.EventWithSeatsResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Description"
+                },
+                "end_time": {
+                    "type": "string",
+                    "example": "2026-05-20T22:00:00Z"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "location": {
+                    "type": "string",
+                    "example": "Location"
+                },
+                "seats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_YuraSahanovskyi_booking-system_internal_handler_dto.SeatResponse"
+                    }
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2026-05-20T18:00:00Z"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Title"
+                }
+            }
+        },
+        "github_com_YuraSahanovskyi_booking-system_internal_handler_dto.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "secret123"
+                }
+            }
+        },
+        "github_com_YuraSahanovskyi_booking-system_internal_handler_dto.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR..."
+                }
+            }
+        },
+        "github_com_YuraSahanovskyi_booking-system_internal_handler_dto.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "secret123"
+                }
+            }
+        },
+        "github_com_YuraSahanovskyi_booking-system_internal_handler_dto.RegisterResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "f4e28058-5f0b-437f-965f-f4670c8e22a7"
+                }
+            }
+        },
+        "github_com_YuraSahanovskyi_booking-system_internal_handler_dto.SeatResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d"
+                },
+                "is_available": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "number": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "price": {
+                    "type": "integer",
+                    "example": 500
+                },
+                "row": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "Type \"Bearer \u003cyour_jwt_token\u003e\" to authenticate",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}
