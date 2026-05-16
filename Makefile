@@ -18,3 +18,6 @@ migrate-force:
 
 db-schema:
 	docker exec -t postgres pg_dump -s -U postgres postgres > schema.sql
+
+seed:
+	docker exec -i postgres psql -U postgres -d postgres < seed.sql

@@ -39,7 +39,7 @@ func (h *Handler) Init() *gin.Engine {
 
 	// Додаємо CORS або Logger за потреби тут
 
-	api := router.Group("/api")
+	api := router.Group("/api/v1")
 	{
 		h.initAuthRoutes(api)
 		h.initEventRoutes(api)

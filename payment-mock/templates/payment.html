@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mock Checkout Gate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full text-center border border-slate-200">
+        <div class="inline-flex p-3 bg-emerald-50 rounded-full text-emerald-500 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+        </div>
+        
+        <h1 class="text-xl font-bold text-slate-800 mb-1">TicketFlow PayMock</h1>
+        <p class="text-xs text-slate-400 uppercase tracking-wider mb-6">Demo Payment Gateway</p>
+        
+        <div class="bg-slate-50 p-4 rounded-xl mb-6 text-left">
+            <span class="text-xs text-slate-400 block mb-1">Booking ID:</span>
+            <span class="font-mono text-sm font-semibold text-slate-700 break-all">{{.BookingID}}</span>
+        </div>
+        
+        <form action="/payment/success" method="POST" class="space-y-3">
+            <input type="hidden" name="booking_id" value="{{.BookingID}}">
+            
+            <button type="submit" class="w-full bg-emerald-500 text-white font-medium py-3 rounded-xl hover:bg-emerald-600 transition shadow-lg shadow-emerald-500/20">
+                Mock Successful Payment
+            </button>
+            
+            <a href="http://localhost/" class="block w-full bg-slate-100 text-slate-600 font-medium py-3 rounded-xl hover:bg-slate-200 transition">
+                Cancel & Go Back
+            </a>
+        </form>
+    </div>
+</body>
+</html>

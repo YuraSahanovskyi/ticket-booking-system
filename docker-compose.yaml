@@ -31,7 +31,7 @@ services:
 
   app:
     build: .
-    container_name: go_app
+    container_name: app
     restart: always
     # environment:
     #   DB_SOURCE: "postgres://postgres:postgres@db:5432/booking_db?sslmode=disable"
@@ -48,7 +48,16 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx:/etc/nginx/conf.d:ro
       - ./frontend:/usr/share/nginx/html:ro # Шлях до папки з index.html
+    depends_on:
+      - app
+      - payment-mock
+
+  payment-mock:
+    build:
+      context: ./payment-mock
+    container_name: payment-mock
+    restart: unless-stopped
     depends_on:
       - app
