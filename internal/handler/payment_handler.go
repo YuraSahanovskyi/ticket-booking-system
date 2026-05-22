@@ -13,7 +13,6 @@ type paymentWebhookInput struct {
 }
 
 func (h *Handler) initPaymentRoutes(api *gin.RouterGroup) {
-	// Вебхук публічний, тому створюємо групу без міддлвари
 	payments := api.Group("/payments")
 	{
 		payments.POST("/webhook", h.handlePaymentWebhook)
@@ -27,7 +26,6 @@ func (h *Handler) handlePaymentWebhook(c *gin.Context) {
 		return
 	}
 
-	// Обробляємо тільки успішну оплату від нашого "псевдо-сервісу"
 	if input.Status != "success" {
 		c.JSON(http.StatusOK, gin.H{"message": "non-success status ignored"})
 		return
@@ -35,7 +33,6 @@ func (h *Handler) handlePaymentWebhook(c *gin.Context) {
 
 	err := h.bookingService.ConfirmPayment(c.Request.Context(), input.OrderID)
 	if err != nil {
-		// Тут можна додати специфічні перевірки на ErrNotFound тощо
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not confirm payment"})
 		return
 	}

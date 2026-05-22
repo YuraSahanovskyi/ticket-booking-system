@@ -15,7 +15,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Одноразовий контейнер для міграцій
   migrate:
     image: migrate/migrate
     volumes:
@@ -33,9 +32,11 @@ services:
     build: .
     container_name: app
     restart: always
-    # environment:
-    #   DB_SOURCE: "postgres://postgres:postgres@db:5432/booking_db?sslmode=disable"
-      # Додайте інші змінні оточення (JWT_SECRET тощо)
+    environment:
+      DB_URL: "postgres://postgres:postgres@db:5432/postgres"
+      REDIS_URL: "redis:6379"
+      JWT_KEY: "super-secret-key"
+      PORT: "8080"
     depends_on:
       db:
         condition: service_healthy
@@ -51,7 +52,7 @@ services:
       - "80:80"
     volumes:
       - ./nginx:/etc/nginx/conf.d:ro
-      - ./frontend:/usr/share/nginx/html:ro # Шлях до папки з index.html
+      - ./frontend:/usr/share/nginx/html:ro
     depends_on:
       - app
       - payment-mock

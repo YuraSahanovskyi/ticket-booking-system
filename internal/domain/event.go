@@ -22,5 +22,5 @@ type Seat struct {
 	Row     int       `json:"row"`
 	Number  int       `json:"number"`
 	Price   int       `json:"price"`
-	Booking *Booking  `json:"booking,omitempty"` // omitempty, якщо місця ще не заброньовані
+	Booking *Booking  `json:"booking,omitempty"`
 }

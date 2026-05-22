@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-	// Обробник головної сторінки оплати (тепер чітко слухає /payment)
 	http.HandleFunc("/payment", func(w http.ResponseWriter, r *http.Request) {
 		bookingID := r.URL.Query().Get("booking_id")
 		if bookingID == "" {
@@ -27,7 +26,6 @@ func main() {
 		_ = tmpl.Execute(w, map[string]string{"BookingID": bookingID})
 	})
 
-	// Обробник успішної оплати (слухає /payment/success)
 	http.HandleFunc("/payment/success", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

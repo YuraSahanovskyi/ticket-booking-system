@@ -31,13 +31,11 @@ func NewBookingService(br repository.BookingRepository, er repository.EventRepos
 func (s *bookingService) BookSeat(ctx context.Context, userID, seatID uuid.UUID) (*domain.Booking, error) {
 	statusKey := fmt.Sprintf("seat:status:%s", seatID.String())
 
-	// 1. ШВИДКА ПЕРЕВІРКА КЕШУ
 	cachedStatus, err := s.rdb.Get(ctx, statusKey).Result()
 	if err == nil && cachedStatus == "occupied" {
 		return nil, errors.New("this seat is already booked or reserved (cached)")
 	}
 
-	// 2. КОРОТКИЙ ЛОК (ЗАХИСТ ВІД RACE CONDITION)
 	lockKey := fmt.Sprintf("lock:seat:%s", seatID.String())
 	lockValue := uuid.New().String()
 
@@ -49,7 +47,6 @@ func (s *bookingService) BookSeat(ctx context.Context, userID, seatID uuid.UUID)
 		return nil, errors.New("seat is temporarily locked, please try again")
 	}
 
-	// 3. ДЕФЕР ДЛЯ МИТТЄВОГО ЗНЯТТЯ ЛОКУ
 	defer func() {
 		var luaReleaseLock = redis.NewScript(`
 			if redis.call("get", KEYS[1]) == ARGV[1] then
@@ -61,7 +58,6 @@ func (s *bookingService) BookSeat(ctx context.Context, userID, seatID uuid.UUID)
 		_ = luaReleaseLock.Run(ctx, s.rdb, []string{lockKey}, lockValue).Err()
 	}()
 
-	// 4. ПЕРЕВІРКА ТА СТВОРЕННЯ В БД
 	booking := &domain.Booking{
 		UserID:    userID,
 		SeatID:    seatID,
@@ -71,13 +67,10 @@ func (s *bookingService) BookSeat(ctx context.Context, userID, seatID uuid.UUID)
 
 	createdBooking, err := s.bookingRepo.Create(ctx, booking)
 	if err != nil {
-		// Якщо репозиторій повернув помилку (наприклад, constraint унікальності місця),
-		// значить місце зайняте. Логгуємо це в кеш, щоб захистити БД від повторних запитів.
 		_ = s.rdb.Set(ctx, statusKey, "occupied", 2*time.Minute).Err()
 		return nil, err
 	}
 
-	// 5. УСПІХ: СТАВИМО ЩИТ НА 2 ХВИЛИНИ
 	_ = s.rdb.Set(ctx, statusKey, "occupied", 2*time.Minute).Err()
 
 	return createdBooking, nil

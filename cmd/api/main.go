@@ -19,7 +19,10 @@ import (
 )
 
 func main() {
-	dbUrl := "postgres://postgres:postgres@db:5432/postgres"
+	dbUrl := os.Getenv("DB_URL")
+	if dbUrl == "" {
+		log.Fatal("invalid DB_URL")
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -34,8 +37,13 @@ func main() {
 		log.Fatalf("Database ping failed: %v\n", err)
 	}
 
+	redisUrl := os.Getenv("REDIS_URL")
+	if redisUrl == "" {
+		log.Fatal("invalid REDIS_URL")
+	}
+
 	rdb := redis.NewClient(&redis.Options{
-		Addr: "redis:6379",
+		Addr: redisUrl,
 	})
 	defer rdb.Close()
 
@@ -48,7 +56,12 @@ func main() {
 	eventRepo := postgres.NewEventRepository(queries)
 	bookingRepo := postgres.NewBookingRepository(queries)
 
-	authService := service.NewAuthService(userRepo, "your-super-secret-key", time.Hour*24)
+	jwtKey := os.Getenv("JWT_KEY")
+	if jwtKey == "" {
+		log.Fatal("invalid JWT_KEY")
+	}
+
+	authService := service.NewAuthService(userRepo, jwtKey, time.Hour*24)
 	eventService := service.NewEventService(eventRepo)
 	bookingService := service.NewBookingService(bookingRepo, eventRepo, time.Minute*15, rdb)
 
@@ -57,8 +70,12 @@ func main() {
 
 	handlers := handler.NewHandler(authService, eventService, bookingService)
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("invalid PORT")
+	}
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + port,
 		Handler: handlers.Init(),
 	}
 
@@ -68,7 +85,7 @@ func main() {
 		}
 	}()
 
-	log.Println("Server started on :8080")
+	log.Println("Server started on :" + port)
 
 	<-ctx.Done()
 
