@@ -17,46 +17,54 @@ type bookingService struct {
 	eventRepo   repository.EventRepository
 	bookingTTL  time.Duration
 	rdb         *redis.Client
+	enableLock  bool
+	enableCache bool
 }
 
-func NewBookingService(br repository.BookingRepository, er repository.EventRepository, ttl time.Duration, rdb *redis.Client) BookingService {
+func NewBookingService(br repository.BookingRepository, er repository.EventRepository, ttl time.Duration, rdb *redis.Client, enableLock bool, enableCache bool) BookingService {
 	return &bookingService{
 		bookingRepo: br,
 		eventRepo:   er,
 		bookingTTL:  ttl,
 		rdb:         rdb,
+		enableLock:  enableLock,
+		enableCache: enableCache,
 	}
 }
 
 func (s *bookingService) BookSeat(ctx context.Context, userID, seatID uuid.UUID) (*domain.Booking, error) {
 	statusKey := fmt.Sprintf("seat:status:%s", seatID.String())
 
-	cachedStatus, err := s.rdb.Get(ctx, statusKey).Result()
-	if err == nil && cachedStatus == "occupied" {
-		return nil, errors.New("this seat is already booked or reserved (cached)")
+	if s.enableCache {
+		cachedStatus, err := s.rdb.Get(ctx, statusKey).Result()
+		if err == nil && cachedStatus == "occupied" {
+			return nil, errors.New("this seat is already booked or reserved (cached)")
+		}
 	}
 
 	lockKey := fmt.Sprintf("lock:seat:%s", seatID.String())
 	lockValue := uuid.New().String()
 
-	success, err := s.rdb.SetNX(ctx, lockKey, lockValue, 5*time.Second).Result()
-	if err != nil {
-		return nil, fmt.Errorf("redis lock error: %w", err)
-	}
-	if !success {
-		return nil, errors.New("seat is temporarily locked, please try again")
-	}
+	if s.enableLock {
+		success, err := s.rdb.SetNX(ctx, lockKey, lockValue, 5*time.Second).Result()
+		if err != nil {
+			return nil, fmt.Errorf("redis lock error: %w", err)
+		}
+		if !success {
+			return nil, errors.New("seat is temporarily locked, please try again")
+		}
 
-	defer func() {
-		var luaReleaseLock = redis.NewScript(`
+		defer func() {
+			var luaReleaseLock = redis.NewScript(`
 			if redis.call("get", KEYS[1]) == ARGV[1] then
 				return redis.call("del", KEYS[1])
 			else
 				return 0
 			end
 		`)
-		_ = luaReleaseLock.Run(ctx, s.rdb, []string{lockKey}, lockValue).Err()
-	}()
+			_ = luaReleaseLock.Run(ctx, s.rdb, []string{lockKey}, lockValue).Err()
+		}()
+	}
 
 	booking := &domain.Booking{
 		UserID:    userID,
@@ -67,11 +75,14 @@ func (s *bookingService) BookSeat(ctx context.Context, userID, seatID uuid.UUID)
 
 	createdBooking, err := s.bookingRepo.Create(ctx, booking)
 	if err != nil {
-		_ = s.rdb.Set(ctx, statusKey, "occupied", 2*time.Minute).Err()
+		if s.enableCache {
+			_ = s.rdb.Set(ctx, statusKey, "occupied", 2*time.Minute).Err()
+		}
 		return nil, err
 	}
-
-	_ = s.rdb.Set(ctx, statusKey, "occupied", 2*time.Minute).Err()
+	if s.enableCache {
+		_ = s.rdb.Set(ctx, statusKey, "occupied", 2*time.Minute).Err()
+	}
 
 	return createdBooking, nil
 }

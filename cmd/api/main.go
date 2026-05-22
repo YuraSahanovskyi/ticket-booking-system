@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -19,10 +20,7 @@ import (
 )
 
 func main() {
-	dbUrl := os.Getenv("DB_URL")
-	if dbUrl == "" {
-		log.Fatal("invalid DB_URL")
-	}
+	dbUrl := requireEnv("DB_URL")
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -37,10 +35,7 @@ func main() {
 		log.Fatalf("Database ping failed: %v\n", err)
 	}
 
-	redisUrl := os.Getenv("REDIS_URL")
-	if redisUrl == "" {
-		log.Fatal("invalid REDIS_URL")
-	}
+	redisUrl := requireEnv("REDIS_URL")
 
 	rdb := redis.NewClient(&redis.Options{
 		Addr: redisUrl,
@@ -56,14 +51,13 @@ func main() {
 	eventRepo := postgres.NewEventRepository(queries)
 	bookingRepo := postgres.NewBookingRepository(queries)
 
-	jwtKey := os.Getenv("JWT_KEY")
-	if jwtKey == "" {
-		log.Fatal("invalid JWT_KEY")
-	}
+	jwtKey := requireEnv("JWT_KEY")
+	enableLock := requireBoolEnv("ENABLE_LOCK")
+	enableCache := requireBoolEnv("ENABLE_CACHE")
 
 	authService := service.NewAuthService(userRepo, jwtKey, time.Hour*24)
 	eventService := service.NewEventService(eventRepo)
-	bookingService := service.NewBookingService(bookingRepo, eventRepo, time.Minute*15, rdb)
+	bookingService := service.NewBookingService(bookingRepo, eventRepo, time.Minute*15, rdb, enableLock, enableCache)
 
 	cleanupWorker := worker.NewCleanupWorker(bookingService, time.Minute)
 	go cleanupWorker.Start(ctx)
@@ -99,4 +93,24 @@ func main() {
 	}
 
 	log.Println("Server exiting")
+}
+
+func requireBoolEnv(key string) bool {
+	val := requireEnv(key)
+	if val == "true" {
+		return true
+	}
+	if val == "false" {
+		return false
+	}
+	log.Fatalf("Environment variable %s must be 'true' or 'false'\n", key)
+	return false
+}
+
+func requireEnv(key string) string {
+	val := os.Getenv(key)
+	if len(val) == 0 {
+		log.Fatal(fmt.Sprintf("%s is not set\n", key))
+	}
+	return val
 }
