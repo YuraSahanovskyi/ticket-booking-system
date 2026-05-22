@@ -2,30 +2,66 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/YuraSahanovskyi/booking-system/internal/domain"
 	"github.com/YuraSahanovskyi/booking-system/internal/repository"
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
 type bookingService struct {
 	bookingRepo repository.BookingRepository
 	eventRepo   repository.EventRepository
 	bookingTTL  time.Duration
+	rdb         *redis.Client
 }
 
-func NewBookingService(br repository.BookingRepository, er repository.EventRepository, ttl time.Duration) BookingService {
+func NewBookingService(br repository.BookingRepository, er repository.EventRepository, ttl time.Duration, rdb *redis.Client) BookingService {
 	return &bookingService{
 		bookingRepo: br,
 		eventRepo:   er,
 		bookingTTL:  ttl,
+		rdb:         rdb,
 	}
 }
 
 func (s *bookingService) BookSeat(ctx context.Context, userID, seatID uuid.UUID) (*domain.Booking, error) {
+	statusKey := fmt.Sprintf("seat:status:%s", seatID.String())
 
+	// 1. ШВИДКА ПЕРЕВІРКА КЕШУ
+	cachedStatus, err := s.rdb.Get(ctx, statusKey).Result()
+	if err == nil && cachedStatus == "occupied" {
+		return nil, errors.New("this seat is already booked or reserved (cached)")
+	}
+
+	// 2. КОРОТКИЙ ЛОК (ЗАХИСТ ВІД RACE CONDITION)
+	lockKey := fmt.Sprintf("lock:seat:%s", seatID.String())
+	lockValue := uuid.New().String()
+
+	success, err := s.rdb.SetNX(ctx, lockKey, lockValue, 5*time.Second).Result()
+	if err != nil {
+		return nil, fmt.Errorf("redis lock error: %w", err)
+	}
+	if !success {
+		return nil, errors.New("seat is temporarily locked, please try again")
+	}
+
+	// 3. ДЕФЕР ДЛЯ МИТТЄВОГО ЗНЯТТЯ ЛОКУ
+	defer func() {
+		var luaReleaseLock = redis.NewScript(`
+			if redis.call("get", KEYS[1]) == ARGV[1] then
+				return redis.call("del", KEYS[1])
+			else
+				return 0
+			end
+		`)
+		_ = luaReleaseLock.Run(ctx, s.rdb, []string{lockKey}, lockValue).Err()
+	}()
+
+	// 4. ПЕРЕВІРКА ТА СТВОРЕННЯ В БД
 	booking := &domain.Booking{
 		UserID:    userID,
 		SeatID:    seatID,
@@ -35,8 +71,14 @@ func (s *bookingService) BookSeat(ctx context.Context, userID, seatID uuid.UUID)
 
 	createdBooking, err := s.bookingRepo.Create(ctx, booking)
 	if err != nil {
+		// Якщо репозиторій повернув помилку (наприклад, constraint унікальності місця),
+		// значить місце зайняте. Логгуємо це в кеш, щоб захистити БД від повторних запитів.
+		_ = s.rdb.Set(ctx, statusKey, "occupied", 2*time.Minute).Err()
 		return nil, err
 	}
+
+	// 5. УСПІХ: СТАВИМО ЩИТ НА 2 ХВИЛИНИ
+	_ = s.rdb.Set(ctx, statusKey, "occupied", 2*time.Minute).Err()
 
 	return createdBooking, nil
 }
@@ -68,5 +110,5 @@ func (s *bookingService) ConfirmPayment(ctx context.Context, orderID uuid.UUID) 
 }
 
 func (s *bookingService) CleanupExpiredBookings(ctx context.Context) (int64, error) {
-    return s.bookingRepo.CancelExpiredBookings(ctx)
+	return s.bookingRepo.CancelExpiredBookings(ctx)
 }
