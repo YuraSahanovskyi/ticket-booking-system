@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -110,7 +109,7 @@ func requireBoolEnv(key string) bool {
 func requireEnv(key string) string {
 	val := os.Getenv(key)
 	if len(val) == 0 {
-		log.Fatal(fmt.Sprintf("%s is not set\n", key))
+		log.Fatalf("%s is not set\n", key)
 	}
 	return val
 }
