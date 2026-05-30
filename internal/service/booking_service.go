@@ -17,17 +17,15 @@ type bookingService struct {
 	eventRepo   repository.EventRepository
 	bookingTTL  time.Duration
 	rdb         *redis.Client
-	enableLock  bool
 	enableCache bool
 }
 
-func NewBookingService(br repository.BookingRepository, er repository.EventRepository, ttl time.Duration, rdb *redis.Client, enableLock bool, enableCache bool) BookingService {
+func NewBookingService(br repository.BookingRepository, er repository.EventRepository, ttl time.Duration, rdb *redis.Client, enableCache bool) BookingService {
 	return &bookingService{
 		bookingRepo: br,
 		eventRepo:   er,
 		bookingTTL:  ttl,
 		rdb:         rdb,
-		enableLock:  enableLock,
 		enableCache: enableCache,
 	}
 }
@@ -36,34 +34,13 @@ func (s *bookingService) BookSeat(ctx context.Context, userID, seatID uuid.UUID)
 	statusKey := fmt.Sprintf("seat:status:%s", seatID.String())
 
 	if s.enableCache {
-		cachedStatus, err := s.rdb.Get(ctx, statusKey).Result()
-		if err == nil && cachedStatus == "occupied" {
-			return nil, errors.New("this seat is already booked or reserved (cached)")
-		}
-	}
-
-	lockKey := fmt.Sprintf("lock:seat:%s", seatID.String())
-	lockValue := uuid.New().String()
-
-	if s.enableLock {
-		success, err := s.rdb.SetNX(ctx, lockKey, lockValue, 5*time.Second).Result()
+		acquired, err := s.rdb.SetNX(ctx, statusKey, "occupied", 5*time.Minute).Result()
 		if err != nil {
-			return nil, fmt.Errorf("redis lock error: %w", err)
+			return nil, fmt.Errorf("redis cache error: %w", err)
 		}
-		if !success {
-			return nil, errors.New("seat is temporarily locked, please try again")
+		if !acquired {
+			return nil, domain.ErrSeatAlreadyBooked
 		}
-
-		defer func() {
-			var luaReleaseLock = redis.NewScript(`
-			if redis.call("get", KEYS[1]) == ARGV[1] then
-				return redis.call("del", KEYS[1])
-			else
-				return 0
-			end
-		`)
-			_ = luaReleaseLock.Run(ctx, s.rdb, []string{lockKey}, lockValue).Err()
-		}()
 	}
 
 	booking := &domain.Booking{
@@ -75,13 +52,12 @@ func (s *bookingService) BookSeat(ctx context.Context, userID, seatID uuid.UUID)
 
 	createdBooking, err := s.bookingRepo.Create(ctx, booking)
 	if err != nil {
-		if s.enableCache {
-			_ = s.rdb.Set(ctx, statusKey, "occupied", 2*time.Minute).Err()
+		if !errors.Is(err, domain.ErrSeatAlreadyBooked) {
+			if s.enableCache {
+				_ = s.rdb.Del(ctx, statusKey).Err()
+			}
 		}
 		return nil, err
-	}
-	if s.enableCache {
-		_ = s.rdb.Set(ctx, statusKey, "occupied", 2*time.Minute).Err()
 	}
 
 	return createdBooking, nil

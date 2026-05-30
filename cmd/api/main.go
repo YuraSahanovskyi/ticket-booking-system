@@ -52,11 +52,10 @@ func main() {
 
 	jwtKey := requireEnv("JWT_KEY")
 	enableLock := requireBoolEnv("ENABLE_LOCK")
-	enableCache := requireBoolEnv("ENABLE_CACHE")
 
 	authService := service.NewAuthService(userRepo, jwtKey, time.Hour*24)
 	eventService := service.NewEventService(eventRepo)
-	bookingService := service.NewBookingService(bookingRepo, eventRepo, time.Minute*15, rdb, enableLock, enableCache)
+	bookingService := service.NewBookingService(bookingRepo, eventRepo, time.Minute*15, rdb, enableLock)
 
 	cleanupWorker := worker.NewCleanupWorker(bookingService, time.Minute)
 	go cleanupWorker.Start(ctx)

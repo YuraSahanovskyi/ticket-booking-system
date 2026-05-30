@@ -37,8 +37,7 @@ services:
       REDIS_URL: "redis:6379"
       JWT_KEY: "super-secret-key"
       PORT: "8080"
-      ENABLE_CACHE: ${ENABLE_CACHE:-false}
-      ENABLE_LOCK: ${ENABLE_LOCK:-false}
+      ENABLE_CACHE: ${ENABLE_CACHE:-true}
     depends_on:
       db:
         condition: service_healthy

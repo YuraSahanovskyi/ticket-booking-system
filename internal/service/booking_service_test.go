@@ -65,7 +65,6 @@ func (m *mockBookingRepo) CancelExpiredBookings(ctx context.Context) (int64, err
 	return 0, nil
 }
 
-
 func TestBookingService(t *testing.T) {
 	mr, err := miniredis.Run()
 	assert.NoError(t, err)
@@ -79,7 +78,7 @@ func TestBookingService(t *testing.T) {
 				return b, nil
 			},
 		}
-		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true, true)
+		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true)
 
 		res, err := svc.BookSeat(context.Background(), uuid.New(), uuid.New())
 		assert.NoError(t, err)
@@ -107,7 +106,7 @@ func TestBookingService(t *testing.T) {
 				return expectedBookings, nil
 			},
 		}
-		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true, true)
+		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true)
 
 		res, err := svc.GetUserBookings(context.Background(), userID)
 		assert.NoError(t, err)
@@ -130,7 +129,7 @@ func TestBookingService(t *testing.T) {
 				return nil
 			},
 		}
-		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true, true)
+		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true)
 
 		err := svc.CancelBooking(context.Background(), userID, bookingID)
 		assert.NoError(t, err)
@@ -142,7 +141,7 @@ func TestBookingService(t *testing.T) {
 				return &domain.Booking{Status: "paid"}, nil
 			},
 		}
-		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true, true)
+		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true)
 
 		err := svc.CancelBooking(context.Background(), uuid.New(), uuid.New())
 		assert.ErrorIs(t, err, domain.ErrBookingCannotBeCanceled)
@@ -159,7 +158,7 @@ func TestBookingService(t *testing.T) {
 				return nil
 			},
 		}
-		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true, true)
+		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true)
 
 		err := svc.ConfirmPayment(context.Background(), orderID)
 		assert.NoError(t, err)
@@ -174,7 +173,7 @@ func TestBookingService(t *testing.T) {
 				return expectedCount, nil
 			},
 		}
-		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true, true)
+		svc := service.NewBookingService(mockRepo, nil, 15*time.Minute, rdb, true)
 
 		count, err := svc.CleanupExpiredBookings(context.Background())
 		assert.NoError(t, err)

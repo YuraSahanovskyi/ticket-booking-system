@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
+	"strings"
 
+	"github.com/YuraSahanovskyi/booking-system/internal/domain"
 	"github.com/YuraSahanovskyi/booking-system/internal/handler/dto"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -50,7 +53,15 @@ func (h *Handler) createBooking(c *gin.Context) {
 
 	booking, err := h.bookingService.BookSeat(c.Request.Context(), userID, seatID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.NewErrorResponse(err.Error()))
+		switch {
+		case errors.Is(err, domain.ErrSeatAlreadyBooked):
+			c.JSON(http.StatusConflict, dto.NewErrorResponse("seat already booked"))
+		case strings.Contains(err.Error(), "already booked") ||
+			strings.Contains(err.Error(), "locked"):
+			c.JSON(http.StatusConflict, dto.NewErrorResponse(err.Error()))
+		default:
+			c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("failed to create booking"))
+		}
 		return
 	}
 
@@ -67,7 +78,7 @@ func (h *Handler) createBooking(c *gin.Context) {
 // @Router       /bookings [get]
 func (h *Handler) getUserBookings(c *gin.Context) {
 	userID, ok := getUserID(c)
-	if !ok{
+	if !ok {
 		c.JSON(http.StatusUnauthorized, dto.NewErrorResponse("unauthorized"))
 		return
 	}
@@ -96,7 +107,7 @@ func (h *Handler) cancelBooking(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, dto.NewErrorResponse("unauthorized"))
 		return
 	}
-	
+
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewErrorResponse("invalid id"))
