@@ -7,20 +7,20 @@ import (
 )
 
 type Event struct {
-	ID          uuid.UUID  `json:"id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Location    string     `json:"location"`
-	StartTime   time.Time  `json:"start_time"`
-	EndTime     *time.Time `json:"end_time"`
-	CreatedAt   time.Time  `json:"created_at"`
+	ID          uuid.UUID
+	Title       string 
+	Description string   
+	Location    string  
+	StartTime   time.Time 
+	EndTime     *time.Time 
+	CreatedAt   time.Time 
 }
 
 type Seat struct {
-	ID      uuid.UUID `json:"id"`
-	EventID uuid.UUID `json:"event_id"`
-	Row     int       `json:"row"`
-	Number  int       `json:"number"`
-	Price   int       `json:"price"`
-	Booking *Booking  `json:"booking,omitempty"`
+	ID      uuid.UUID 
+	EventID uuid.UUID 
+	Row     int      
+	Number  int       
+	Price   int       
+	Booking *Booking  
 }

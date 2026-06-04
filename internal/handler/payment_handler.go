@@ -3,14 +3,9 @@ package handler
 import (
 	"net/http"
 
+	"github.com/YuraSahanovskyi/booking-system/internal/handler/dto"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
-
-type paymentWebhookInput struct {
-	OrderID uuid.UUID `json:"order_id" binding:"required"`
-	Status  string    `json:"status" binding:"required"`
-}
 
 func (h *Handler) initPaymentRoutes(api *gin.RouterGroup) {
 	payments := api.Group("/payments")
@@ -20,7 +15,7 @@ func (h *Handler) initPaymentRoutes(api *gin.RouterGroup) {
 }
 
 func (h *Handler) handlePaymentWebhook(c *gin.Context) {
-	var input paymentWebhookInput
+	var input dto.PaymentWebhookRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payment payload"})
 		return

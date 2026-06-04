@@ -51,11 +51,11 @@ func main() {
 	bookingRepo := postgres.NewBookingRepository(queries)
 
 	jwtKey := requireEnv("JWT_KEY")
-	enableLock := requireBoolEnv("ENABLE_LOCK")
+	enableCache := requireBoolEnv("ENABLE_CACHE")
 
 	authService := service.NewAuthService(userRepo, jwtKey, time.Hour*24)
 	eventService := service.NewEventService(eventRepo)
-	bookingService := service.NewBookingService(bookingRepo, eventRepo, time.Minute*15, rdb, enableLock)
+	bookingService := service.NewBookingService(bookingRepo, eventRepo, time.Minute*15, rdb, enableCache)
 
 	cleanupWorker := worker.NewCleanupWorker(bookingService, time.Minute)
 	go cleanupWorker.Start(ctx)

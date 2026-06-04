@@ -7,11 +7,11 @@ import (
 )
 
 type Booking struct {
-	ID        uuid.UUID `json:"id"`
-	UserID    uuid.UUID `json:"user_id"`
-	SeatID    uuid.UUID `json:"seat_id"`
-	Status    string    `json:"status"`
-	ExpiresAt time.Time `json:"expires_at"`
+	ID        uuid.UUID
+	UserID    uuid.UUID
+	SeatID    uuid.UUID
+	Status    string
+	ExpiresAt time.Time
 }
 
 type BookingWithDetails struct {
