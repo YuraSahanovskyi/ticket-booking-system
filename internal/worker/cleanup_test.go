@@ -13,7 +13,6 @@ import (
 	"github.com/YuraSahanovskyi/booking-system/internal/worker"
 )
 
-
 type mockBookingService struct {
 	cleanupCalledCount int32
 }
@@ -36,7 +35,6 @@ func (m *mockBookingService) ConfirmPayment(ctx context.Context, orderID uuid.UU
 	return nil
 }
 
-
 func TestCleanupWorker_Lifecycle(t *testing.T) {
 	mockSvc := &mockBookingService{}
 
@@ -54,5 +52,5 @@ func TestCleanupWorker_Lifecycle(t *testing.T) {
 	time.Sleep(2 * time.Millisecond)
 
 	calls := atomic.LoadInt32(&mockSvc.cleanupCalledCount)
-	assert.GreaterOrEqual(t, calls, int32(1), "Воркер мав виконати хоча б одне очищення")
+	assert.GreaterOrEqual(t, calls, int32(1), "The worker should have performed at least one cleanup")
 }

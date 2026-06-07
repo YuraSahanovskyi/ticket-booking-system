@@ -219,16 +219,12 @@
                     <div
                         class="mb-6 flex flex-wrap gap-6 justify-center text-sm font-medium bg-gray-50 p-4 rounded-xl border border-gray-200">
                         <div class="flex items-center gap-2">
-                            <div class="w-5 h-5 rounded bg-white border-2 border-gray-300 shadow-sm"></div> <span
-                                class="text-gray-700">Available</span>
+                            <div class="w-5 h-5 rounded bg-green-500 border-2 border-green-600 shadow-sm"></div>
+                            <span class="text-gray-700">Available</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <div class="w-5 h-5 rounded bg-amber-400 border-2 border-amber-500 shadow-sm"></div> <span
-                                class="text-gray-700">Reserved (Payment Pending)</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <div class="w-5 h-5 rounded bg-indigo-600 border-2 border-indigo-700 shadow-sm"></div> <span
-                                class="text-gray-700">Paid / Unavailable</span>
+                            <div class="w-5 h-5 rounded bg-red-500 border-2 border-red-600 shadow-sm"></div>
+                            <span class="text-gray-700">Unavailable</span>
                         </div>
                     </div>
 
@@ -243,18 +239,25 @@
                         </div>
 
                         <!-- Dynamic Seat Grid -->
-                        <div class="grid gap-3 justify-center max-w-4xl mx-auto"
-                            style="grid-template-columns: repeat(auto-fit, minmax(2.5rem, 1fr));">
-                            <template x-for="seat in currentSeats" :key="seat.id">
-                                <button
-                                    type="button"
-                                    class="w-10 h-10 md:w-12 md:h-12 rounded-t-xl rounded-b-md font-bold text-xs flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-sm text-white border border-transparent cursor-pointer"
-                                    :class="seat.is_available ? 'bg-green-500 hover:bg-green-600 hover:-translate-y-1' : 'bg-red-500 cursor-not-allowed opacity-80'"
-                                    :disabled="!seat.is_available" 
-                                    @click.prevent.stop="bookSeat(seat.id)"
-                                    :title="`Row ${seat.row} - Seat ${seat.number}`">
-                                    <span class="pointer-events-none" x-text="seat.number"></span>
-                                </button>
+                        <div class="flex flex-col gap-3 items-center max-w-4xl mx-auto">
+                            <template x-for="row in [...new Set(currentSeats.map(s => s.row))].sort((a,b) => a-b)"
+                                :key="row">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-gray-400 w-6 text-right" x-text="row"></span>
+                                    <div class="flex gap-2">
+                                        <template
+                                            x-for="seat in currentSeats.filter(s => s.row === row).sort((a,b) => a.number - b.number)"
+                                            :key="seat.id">
+                                            <button type="button"
+                                                class="w-10 h-10 md:w-12 md:h-12 rounded-t-xl rounded-b-md font-bold text-xs flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-sm text-white border border-transparent cursor-pointer"
+                                                :class="seat.is_available ? 'bg-green-500 hover:bg-green-600 hover:-translate-y-1' : 'bg-red-500 cursor-not-allowed opacity-80'"
+                                                :disabled="!seat.is_available" @click.prevent.stop="bookSeat(seat.id)"
+                                                :title="`Row ${seat.row} - Seat ${seat.number}`">
+                                                <span class="pointer-events-none" x-text="seat.number"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
                             </template>
                         </div>
 
