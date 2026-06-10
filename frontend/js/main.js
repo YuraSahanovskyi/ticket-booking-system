@@ -12,6 +12,8 @@ document.addEventListener('alpine:init', () => {
         currentEvent: null,
         currentSeats: [],
         bookings: [],
+        selectedSeat: null,
+        bookingCreated: false,
         authForm: { email: '', password: '' },
         notification: null,
         notificationTimeout: null,
@@ -111,26 +113,77 @@ document.addEventListener('alpine:init', () => {
         async fetchEventDetails(id) {
             try {
                 const data = await getEventDetails(id);
+
                 this.currentEvent = data;
                 this.currentSeats = data.seats || [];
+
+                this.selectedSeat = null;
+                this.bookingCreated = false;
+
                 this.navigate('event');
             } catch (err) {
                 this.handleApiError(err);
             }
         },
 
-        async bookSeat(seatId) {
+        selectSeat(seat) {
+            if (!seat.is_available) return;
+
+            if (this.selectedSeat?.id === seat.id) {
+                this.selectedSeat = null;
+                this.bookingCreated = false;
+                return;
+            }
+
+            this.selectedSeat = seat;
+            this.bookingCreated = false;
+        },
+
+        scrollToSeatMap() {
+            const el = document.getElementById('seat-selection-panel');
+
+            if (!el) return;
+
+            window.scrollTo({
+                top: el.offsetTop - 90,
+                behavior: 'smooth'
+            });
+        },
+
+        async bookSeat() {
             if (!this.token) {
-                this.showNotification("Please login to book tickets", "warning");
+                this.showNotification(
+                    "Please login to book tickets",
+                    "warning"
+                );
+                return;
+            }
+
+            if (!this.selectedSeat) {
                 return;
             }
 
             try {
-                await createBooking(seatId, this.token);
-                this.showNotification("Seat reserved successfully!", "success");
-                if (this.currentEvent?.id) {
-                    this.fetchEventDetails(this.currentEvent.id);
-                }
+                await createBooking(
+                    this.selectedSeat.id,
+                    this.token
+                );
+
+                this.bookingCreated = true;
+
+                this.showNotification(
+                    "Seat reserved successfully!",
+                    "success"
+                );
+
+                await this.fetchBookings();
+
+                const data = await getEventDetails(
+                    this.currentEvent.id
+                );
+
+                this.currentSeats = data.seats || [];
+
             } catch (err) {
                 this.handleApiError(err);
             }

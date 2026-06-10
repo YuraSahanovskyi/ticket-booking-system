@@ -216,6 +216,44 @@
                         </p>
                     </div>
 
+                    <div id="seat-selection-panel" class="mb-6 h-16 flex justify-center items-center">
+
+                        <template x-if="!selectedSeat">
+                            <button @click="scrollToSeatMap()"
+                                class="text-indigo-600 hover:text-indigo-800 font-medium transition">
+                                Please select a seat
+                            </button>
+                        </template>
+
+                        <template x-if="selectedSeat">
+                            <div
+                                class="bg-yellow-50 border border-yellow-300 rounded-xl px-4 py-2 flex items-center gap-4 shadow-sm">
+
+                                <span class="font-medium">
+                                    Selected:
+                                    Row <span x-text="selectedSeat.row"></span>,
+                                    Seat <span x-text="selectedSeat.number"></span>
+                                </span>
+
+                                <template x-if="!bookingCreated">
+                                    <button @click="bookSeat()"
+                                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                                        Book this seat
+                                    </button>
+                                </template>
+
+                                <template x-if="bookingCreated">
+                                    <button @click="navigate('bookings')"
+                                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                                        Go to my bookings
+                                    </button>
+                                </template>
+
+                            </div>
+                        </template>
+
+                    </div>
+
                     <div
                         class="mb-6 flex flex-wrap gap-6 justify-center text-sm font-medium bg-gray-50 p-4 rounded-xl border border-gray-200">
                         <div class="flex items-center gap-2">
@@ -223,42 +261,83 @@
                             <span class="text-gray-700">Available</span>
                         </div>
                         <div class="flex items-center gap-2">
+                            <div class="w-5 h-5 rounded bg-yellow-400 border-2 border-yellow-500 shadow-sm"></div>
+                            <span class="text-gray-700">Selected</span>
+                        </div>
+                        <div class="flex items-center gap-2">
                             <div class="w-5 h-5 rounded bg-red-500 border-2 border-red-600 shadow-sm"></div>
                             <span class="text-gray-700">Unavailable</span>
                         </div>
                     </div>
 
-                    <div
+                    <div id="seat-map"
                         class="bg-gray-100 p-8 md:p-12 rounded-2xl border border-gray-200 overflow-x-auto relative shadow-inner">
+
                         <!-- Stage Indicator -->
                         <div class="w-full max-w-md mx-auto relative mb-16">
                             <div
                                 class="h-12 bg-gradient-to-b from-gray-300 to-gray-200 rounded-t-[100px] border-t-4 border-gray-400 shadow-sm flex justify-center items-end pb-2">
-                                <span class="text-xs font-bold text-gray-500 tracking-[0.3em] uppercase">Stage</span>
+                                <span class="text-xs font-bold text-gray-500 tracking-[0.3em] uppercase">
+                                    Stage
+                                </span>
                             </div>
                         </div>
 
                         <!-- Dynamic Seat Grid -->
                         <div class="flex flex-col gap-3 items-center max-w-4xl mx-auto">
+
                             <template x-for="row in [...new Set(currentSeats.map(s => s.row))].sort((a,b) => a-b)"
                                 :key="row">
-                                <div class="flex items-center gap-2">
-                                    <span class="text-xs font-bold text-gray-400 w-6 text-right" x-text="row"></span>
+
+                                <div class="flex items-center gap-3">
+
+                                    <!-- Left row number -->
+                                    <div
+                                        class="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm shadow-sm">
+                                        <span x-text="row"></span>
+                                    </div>
+
+                                    <!-- Seats -->
                                     <div class="flex gap-2">
-                                        <template
-                                            x-for="seat in currentSeats.filter(s => s.row === row).sort((a,b) => a.number - b.number)"
-                                            :key="seat.id">
+
+                                        <template x-for="seat in currentSeats
+                            .filter(s => s.row === row)
+                            .sort((a,b) => a.number - b.number)" :key="seat.id">
+
                                             <button type="button"
                                                 class="w-10 h-10 md:w-12 md:h-12 rounded-t-xl rounded-b-md font-bold text-xs flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-sm text-white border border-transparent cursor-pointer"
-                                                :class="seat.is_available ? 'bg-green-500 hover:bg-green-600 hover:-translate-y-1' : 'bg-red-500 cursor-not-allowed opacity-80'"
-                                                :disabled="!seat.is_available" @click.prevent.stop="bookSeat(seat.id)"
+                                                :class="{
+                                'bg-yellow-400 text-black border-yellow-500':
+                                    selectedSeat?.id === seat.id,
+
+                                'bg-green-500 hover:bg-green-600 hover:-translate-y-1':
+                                    seat.is_available &&
+                                    selectedSeat?.id !== seat.id,
+
+                                'bg-red-500 cursor-not-allowed opacity-80':
+                                    !seat.is_available
+                            }" :disabled="!seat.is_available" @click.prevent.stop="selectSeat(seat)"
                                                 :title="`Row ${seat.row} - Seat ${seat.number}`">
-                                                <span class="pointer-events-none" x-text="seat.number"></span>
+
+                                                <span class="pointer-events-none" x-text="seat.number">
+                                                </span>
+
                                             </button>
+
                                         </template>
+
                                     </div>
+
+                                    <!-- Right row number -->
+                                    <div
+                                        class="w-8 h-8 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm shadow-sm">
+                                        <span x-text="row"></span>
+                                    </div>
+
                                 </div>
+
                             </template>
+
                         </div>
 
                         <template x-if="!currentSeats || currentSeats.length === 0">
@@ -266,6 +345,7 @@
                                 Seat map is currently unavailable.
                             </div>
                         </template>
+
                     </div>
                 </div>
             </template>
