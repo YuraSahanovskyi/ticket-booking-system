@@ -12,6 +12,7 @@ document.addEventListener('alpine:init', () => {
         currentEvent: null,
         currentSeats: [],
         bookings: [],
+        currentTicket: null,
         selectedSeat: null,
         bookingCreated: false,
         authForm: { email: '', password: '' },
@@ -187,6 +188,34 @@ document.addEventListener('alpine:init', () => {
             } catch (err) {
                 this.handleApiError(err);
             }
+        },
+
+        openTicket(booking) {
+            this.currentTicket = booking;
+            this.view = 'ticket';
+
+            this.$nextTick(() => {
+                this.generateQr();
+            });
+        },
+
+        generateQr() {
+            const canvas = document.getElementById('ticket-qr');
+
+            if (!canvas || !this.currentTicket) return;
+
+            QRCode.toCanvas(
+                canvas,
+                JSON.stringify({
+                    bookingId: this.currentTicket.id,
+                    event: this.currentTicket.event_title,
+                    row: this.currentTicket.seat_row,
+                    seat: this.currentTicket.seat_number
+                }),
+                {
+                    width: 180
+                }
+            );
         },
 
         async fetchBookings() {
