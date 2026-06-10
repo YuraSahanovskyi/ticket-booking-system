@@ -37,8 +37,6 @@ func NewHandler(auth service.AuthService, event service.EventService, booking se
 func (h *Handler) Init() *gin.Engine {
 	router := gin.Default()
 
-	// Додаємо CORS або Logger за потреби тут
-
 	api := router.Group("/api/v1")
 	{
 		h.initAuthRoutes(api)

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -60,6 +61,7 @@ func (h *Handler) createBooking(c *gin.Context) {
 			strings.Contains(err.Error(), "locked"):
 			c.JSON(http.StatusConflict, dto.NewErrorResponse(err.Error()))
 		default:
+			log.Println(err)
 			c.JSON(http.StatusInternalServerError, dto.NewErrorResponse("failed to create booking"))
 		}
 		return
