@@ -162,19 +162,38 @@
                 <template x-for="event in events" :key="event.id || Math.random()">
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col"
                         @click="fetchEventDetails(event.id)">
-                        <div class="h-40 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative">
+                        <div class="h-40 relative overflow-hidden">
+
+                            <img :src="getEventImage(event.id)" @error="$event.target.src='/images/events/default.jpg'"
+                                :alt="event.title" class="w-full h-full object-cover">
+
+                            <!-- Dark overlay for readability -->
                             <div
-                                class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-gray-900/50 to-transparent">
+                                class="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-gray-900/60 to-transparent">
                             </div>
-                            <div class="absolute bottom-4 left-4 text-white font-semibold flex items-center gap-2">
+
+                            <!-- Event date -->
+                            <div class="absolute bottom-4 left-4 text-white font-semibold flex items-center gap-2 z-10">
+
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
+
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+
                                 </svg>
-                                <span
-                                    x-text="event.start_time ? new Date(event.start_time).toLocaleDateString(undefined, {weekday: 'short', month: 'short', day: 'numeric'}) : 'Date TBD'"></span>
+
+                                <span x-text="event.start_time
+                ? new Date(event.start_time).toLocaleDateString(undefined, {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric'
+                })
+                : 'Date TBD'">
+                                </span>
+
                             </div>
+
                         </div>
                         <div class="p-6 flex-1 flex flex-col">
                             <h2 class="text-xl font-bold text-gray-900 mb-2 leading-tight"
@@ -243,14 +262,33 @@
 
                     <div id="seat-selection-panel" class="mb-6 h-16 flex justify-center items-center">
 
-                        <template x-if="!selectedSeat">
+                        <!-- Not authenticated -->
+                        <template x-if="!isAuthenticated">
+                            <div
+                                class="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2 flex items-center gap-4 shadow-sm">
+
+                                <span class="text-amber-800 font-medium">
+                                    Login required to reserve seats
+                                </span>
+
+                                <button @click="navigate('login')"
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                                    Login
+                                </button>
+
+                            </div>
+                        </template>
+
+                        <!-- Authenticated, no seat selected -->
+                        <template x-if="isAuthenticated && !selectedSeat">
                             <button @click="scrollToSeatMap()"
                                 class="text-indigo-600 hover:text-indigo-800 font-medium transition">
                                 Please select a seat
                             </button>
                         </template>
 
-                        <template x-if="selectedSeat">
+                        <!-- Authenticated, seat selected -->
+                        <template x-if="isAuthenticated && selectedSeat">
                             <div
                                 class="bg-yellow-50 border border-yellow-300 rounded-xl px-4 py-2 flex items-center gap-4 shadow-sm">
 
@@ -558,7 +596,8 @@
                 </div>
 
                 <!-- Footer -->
-                <div class="bg-gray-50 border-t border-gray-200 px-8 py-4 flex flex-wrap justify-end gap-3 print:hidden">
+                <div
+                    class="bg-gray-50 border-t border-gray-200 px-8 py-4 flex flex-wrap justify-end gap-3 print:hidden">
 
                     <button @click="navigate('bookings')"
                         class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition">

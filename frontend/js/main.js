@@ -111,6 +111,10 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        getEventImage(eventId) {
+            return `/images/events/${eventId}.jpg`;
+        },
+
         async fetchEventDetails(id) {
             try {
                 const data = await getEventDetails(id);
@@ -128,6 +132,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         selectSeat(seat) {
+            if (!this.isAuthenticated) return;
             if (!seat.is_available) return;
 
             if (this.selectedSeat?.id === seat.id) {
