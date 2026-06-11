@@ -22,8 +22,26 @@ document.addEventListener('alpine:init', () => {
 
         init() {
             this.fetchEvents();
+
+            const params = new URLSearchParams(window.location.search);
+
             if (this.token) {
                 this.fetchBookings();
+
+                if (params.get('payment') === 'success') {
+                    this.view = 'bookings';
+
+                    this.showNotification(
+                        'Payment successful! Your ticket is now available.',
+                        'success'
+                    );
+                    
+                    window.history.replaceState(
+                        {},
+                        document.title,
+                        window.location.pathname
+                    );
+                }
             }
         },
 
